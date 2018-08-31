@@ -72,7 +72,6 @@ If you use ThunderSVM in your paper, please cite our work ([preprint now availab
 ```
 ## Related websites
 * [LibSVM](https://www.csie.ntu.edu.tw/~cjlin/libsvm/) | [SVM<sup>light</sup>](http://svmlight.joachims.org/) | [OHD-SVM](https://github.com/OrcusCZ/OHD-SVM) | [NVIDIA Machine Learning](http://www.nvidia.com/object/machine-learning.html)
- 
 
 ## Acknowlegement 
 * We acknowledge NVIDIA for their hardware donations.

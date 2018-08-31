@@ -6,4 +6,4 @@ all:
 	$(MAKE) -C host
 
 run: all
-	host/build/square pulp/build/system.oprecompkw/square/square
+	host/build/square pulp/build/oprecompkw/square/square

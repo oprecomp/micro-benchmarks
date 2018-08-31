@@ -56,7 +56,7 @@ int main(uint64_t wedptr) {
 
 	// Determine the tiling of the input data via a binary search. This is quite
 	// inefficient and should be improved.
-	const uint32_t max_size = 65536;
+	const uint32_t max_size = 65536 - 0x5000;
 	const uint32_t max_volume = (max_size - (16 << 10)) / 4;
 	printf("Determining Tiling\n");
 	printf("  max_volume = %lu\n", max_volume);
@@ -96,6 +96,11 @@ int main(uint64_t wedptr) {
 	float *tile_x = rt_alloc(RT_ALLOC_CL_DATA, bufsz_x);
 	float *tile_w = rt_alloc(RT_ALLOC_CL_DATA, bufsz_w);
 	float *tile_y = rt_alloc(RT_ALLOC_CL_DATA, bufsz_y);
+	if (tile_x == NULL || tile_y == NULL || tile_w == NULL)
+	{
+	  printf("Failed to allocate memory\n");
+	  return -1;
+	}
 
 	// Perform the outer iterations.
 	for (int32_t ko1 = 0; ko1 < wed.KO; ko1 += TKO) {
@@ -123,25 +128,31 @@ int main(uint64_t wedptr) {
 					const int32_t XM1 = m_hi-m_lo;
 
 					printf("Loading x tile ki1=%lu..%lu, n=%lu..%lu (%ld), m=%lu..%lu (%ld)\n", ki1, ki1+KI1, n_lo, n_hi, XN1, m_lo, m_hi, XM1);
+					int merge = 0;
 					for (int32_t ki2 = 0; ki2 < KI1; ++ki2) {
 						for (int32_t n2 = 0; n2 < XN1; ++n2) {
-							plp_dma_memcpy(
+							plp_dma_memcpy_merge(
 								host2local(wed.in_x + (ki1+ki2)*wed.N*wed.M*4 + (n2+n_lo)*wed.M*4 + m_lo*4),
 								(uint32_t)tile_x + ki2*XN1*XM1*4 + n2*XM1*4,
 								XM1*4,
-								PLP_DMA_EXT2LOC
+								PLP_DMA_EXT2LOC,
+								merge
 							);
+							merge = 1;
 						}
 					}
 					plp_dma_barrier();
+					merge = 0;
 					for (int32_t ko2 = 0; ko2 < KO1; ++ko2) {
 						for (int32_t ki2 = 0; ki2 < KI1; ++ki2) {
-							plp_dma_memcpy(
+							plp_dma_memcpy_merge(
 								host2local(wed.in_w + (ko1+ko2)*wed.KI*wed.U*wed.V*4 + (ki1+ki2)*wed.U*wed.V*4),
 								(uint32_t)tile_w + ko2*TKI*wed.U*wed.V*4 + ki2*wed.U*wed.V*4,
 								wed.U*wed.V*4,
-								PLP_DMA_EXT2LOC
+								PLP_DMA_EXT2LOC,
+								merge
 							);
+							merge = 1;
 						}
 					}
 					plp_dma_barrier();
@@ -171,14 +182,17 @@ int main(uint64_t wedptr) {
 				}
 
 				// Write result tile back.
+				int merge = 0;
 				for (int32_t ko2 = 0; ko2 < KO1; ++ko2) {
 					for (int32_t n2 = 0; n2 < N1; ++n2) {
-						plp_dma_memcpy(
+						plp_dma_memcpy_merge(
 							host2local(wed.out_y + (ko1+ko2)*wed.N*wed.M*4 + (n1+n2)*wed.M*4 + m1*4),
 							(uint32_t)tile_y + ko2*N1*M1*4 + n2*M1*4,
 							M1*4,
-							PLP_DMA_LOC2EXT
+							PLP_DMA_LOC2EXT,
+							merge
 						);
+						merge = 1;
 					}
 				}
 			}

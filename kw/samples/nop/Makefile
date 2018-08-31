@@ -6,4 +6,4 @@ all:
 	$(MAKE) -C host
 
 run: all
-	host/build/nop pulp/build/system.oprecompkw/nop/nop
+	host/build/nop pulp/build/oprecompkw/nop/nop

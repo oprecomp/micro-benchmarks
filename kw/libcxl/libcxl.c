@@ -9,7 +9,7 @@
 #include <pthread.h>
 
 #include "libcxl.h"
-#include "gv/gv_launcher.h"
+#include "vp/launcher.h"
 
 
 struct cxl_afu_h {
@@ -119,14 +119,14 @@ afu_open(struct cxl_afu_h *afu) {
 	}
 
 	// Configure the handles into the platform.
-	afu->capi_binding = gv_ioreq_binding(afu->gv, "soc/soc_ico", (void *)((uint64_t)1 << 48), (uint64_t)1 << 48, capi_callback, afu);
+	afu->capi_binding = gv_ioreq_binding(afu->gv, "soc/host_injector", (void *)((uint64_t)1 << 48), (uint64_t)1 << 48, capi_callback, afu);
 	// afu->capi_binding = gv_ioreq_binding(afu->gv, "soc/soc_ico", (void *)0x1a600000, 0x00100000, capi_callback, afu);
 	if (afu->capi_binding == NULL) {
 		fprintf(stderr, "libcxl error: unable to establish CAPI binding (gv_ioreq_binding)\n");
 		goto fail;
 	}
 
-	afu->wed_binding = gv_ioreq_binding(afu->gv, "job_fifo", NULL, 0, NULL, NULL);
+	afu->wed_binding = gv_ioreq_binding(afu->gv, "job_fifo_injector", NULL, 0, NULL, NULL);
 	if (afu->wed_binding == NULL) {
 		fprintf(stderr, "libcxl error: unable to establish WED FIFO binding (gv_ioreq_binding)\n");
 		goto fail;

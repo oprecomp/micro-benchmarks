@@ -8,7 +8,7 @@
 #include "mmio.h"
 #include <tgmath.h> // interferes with mmio.h
 
-#include "cg.h"
+#include "floatm.h"
 #include "matrix.h"
 
 static int compar(const void *pa, const void *pb)
@@ -19,7 +19,8 @@ static int compar(const void *pa, const void *pb)
     if (a->i > b->i) return 1;
     if (a->j < b->j) return -1;
     if (a->j > b->j) return 1;
-    return 0;
+    fprintf(stderr, "Repeated matrix element %i %i\n", a->i, a->j);
+    exit(1);
 }
 
 void coo_load(const char *fname, int *n, int *nz, struct matrix_coo **a)
@@ -34,7 +35,7 @@ void coo_load(const char *fname, int *n, int *nz, struct matrix_coo **a)
         fprintf(stderr, "Could not process Matrix Market banner\n");
         exit(1);
     }
-    if (!mm_is_matrix(matcode) || !mm_is_sparse(matcode) || mm_is_complex(matcode) || !mm_is_symmetric(matcode)) {
+    if (!(mm_is_real(matcode) && mm_is_matrix(matcode) && mm_is_sparse(matcode))) {
         fprintf(stderr, "This application does not support the Market Market type: %s\n",
                 mm_typecode_to_str(matcode));
         exit(1);
@@ -48,8 +49,11 @@ void coo_load(const char *fname, int *n, int *nz, struct matrix_coo **a)
         fprintf(stderr, "Matrix is not square\n");
         exit(1);
     }
-    struct matrix_coo *coo = ALLOC(struct matrix_coo, 2 * NZ);
-
+    struct matrix_coo *coo = malloc(sizeof(struct matrix_coo) * 2 * NZ);
+    if (coo == NULL) {
+        fprintf(stderr, "Out of memory\n");
+        exit(1);
+    }
     int k = 0;
     for (int l = 0; l < NZ; l++) {
         double real;
@@ -73,37 +77,6 @@ void coo_load(const char *fname, int *n, int *nz, struct matrix_coo **a)
     *n = N; *nz = k; *a = coo;
 }
 
-double coo_norm_inf(int n, int nz, struct matrix_coo *coo)
-{
-    double *amax = CALLOC(double, n);
-    for (int i = 0; i < nz; i++) {
-        int row = coo[i].i;
-        int val = coo[i].a;
-        amax[row] += abs(val);
-    }
-    double norm = 0.0;
-    for (int i = 0; i < n; i++) {
-        if (amax[i] > norm) norm = amax[i];
-    }
-    FREE(amax);
-    return norm;
-}
-
-double coo_max_nz(int n, int nz, struct matrix_coo *coo)
-{
-    double *m = CALLOC(double, n);
-    for (int i = 0; i < nz; i++) {
-        int row = coo[i].i;
-        m[row]++;
-    }
-    int r = 0.0;
-    for (int i = 0; i < n; i++) {
-        if (m[i] > r) r = m[i];
-    }
-    FREE(m);
-    return r;
-}
-
 // CSR matrix
 
 struct matrix_csr { struct matrix super; int *i; int *j; DOUBLE *A; };
@@ -118,10 +91,10 @@ void csr_dmult(struct matrix_csr *mat, DOUBLE *x, DOUBLE *y)
     }
 }
 
-void csr_smult(struct matrix_csr *mat, FLOAT *x, FLOAT *y)
+void csr_smult(struct matrix_csr *mat, FLOATM *x, FLOATM *y)
 {
     for (int k = 0; k < mat->super.n; k++) {
-        FLOAT2 t = 0.0;
+        FLOATM t = 0.0;
         for (int l = mat->i[k]; l < mat->i[k + 1]; l++)
             t += mat->A[l] * x[mat->j[l]];
         y[k] = t;
@@ -130,9 +103,9 @@ void csr_smult(struct matrix_csr *mat, FLOAT *x, FLOAT *y)
 
 struct matrix *csr_create(int n, int nz, struct matrix_coo *coo)
 {
-    int *i = ALLOC(int, n + 1);
-    int *j = ALLOC(int, nz);
-    DOUBLE *A = ALLOC(DOUBLE, nz);
+    int *i = malloc(sizeof(int) * (n + 1));
+    int *j = malloc(sizeof(int) * nz);
+    DOUBLE *A = malloc(sizeof(DOUBLE) * nz);
 
     i[0] = 0;
     int l = 0;
@@ -145,13 +118,13 @@ struct matrix *csr_create(int n, int nz, struct matrix_coo *coo)
         i[k + 1] = l;
     }
 
-    struct matrix_csr *mat = ALLOC(struct matrix_csr, 1);
+    struct matrix_csr *mat = malloc(sizeof(struct matrix_csr));
     mat->super.n = n;
     mat->i = i;
     mat->j = j;
     mat->A = A;
     mat->super.dmult = (void (*)(struct matrix *, DOUBLE *, DOUBLE *))csr_dmult;
-    mat->super.smult = (void (*)(struct matrix *, FLOAT *, FLOAT *))csr_smult;
+    mat->super.smult = (void (*)(struct matrix *, FLOATM *, FLOATM *))csr_smult;
     return (struct matrix *)mat;
 }
 
@@ -169,10 +142,10 @@ void dense_dmult(struct matrix_dense *mat, DOUBLE *x, DOUBLE *y)
     }
 }
 
-void dense_smult(uint8_t m, struct matrix_dense *mat, FLOAT *x, FLOAT *y)
+void dense_smult(struct matrix_dense *mat, FLOATM *x, FLOATM *y)
 {
     for (int i = 0; i < mat->super.n; i++) {
-        FLOAT2 t = 0.0;
+        FLOATM t = 0.0;
         for (int j = 0; j < mat->super.n; j++)
             t += mat->A[i * mat->super.n + j] * x[j];
         y[i] = t;
@@ -181,42 +154,43 @@ void dense_smult(uint8_t m, struct matrix_dense *mat, FLOAT *x, FLOAT *y)
 
 struct matrix *dense_create(int n, int nz, struct matrix_coo *coo)
 {
-    DOUBLE *A = CALLOC(DOUBLE, n * n);
+    DOUBLE *A = calloc(n * n, sizeof(DOUBLE));
 
     // row major format
     for (int k = 0; k < nz; k++) A[coo[k].i * n + coo[k].j] = coo[k].a;
 
-    struct matrix_dense *mat = ALLOC(struct matrix_dense, 1);
+    struct matrix_dense *mat = malloc(sizeof(struct matrix_dense));
     mat->super.n = n;
     mat->super.dmult = (void (*)(struct matrix *, DOUBLE *, DOUBLE *))dense_dmult;
-    mat->super.smult = (void (*)(struct matrix *, FLOAT *, FLOAT *))dense_smult;
+    mat->super.smult = (void (*)(struct matrix *, FLOATM *, FLOATM *))dense_smult;
     mat->A = A;
     return (struct matrix *)mat;
 }
 
 // Jacobi preconditioner
 
-struct precond_jacobi { struct matrix super; FLOAT *d; };
+struct precond_jacobi { struct matrix super; int bits; FLOATM *d; };
 
-void jacobi_smult(struct precond_jacobi *pre, FLOAT *x, FLOAT *y)
+void jacobi_smult(struct precond_jacobi *pre, FLOATM *x, FLOATM *y)
 {
     for (int k = 0; k < pre->super.n; k++) {
-       y[k] = x[k] / pre->d[k];
+       y[k] = TRUNCATE(FLOATM, pre->bits, x[k] / pre->d[k]);
     }
 }
 
-struct matrix *jacobi_create(int n, int nz, struct matrix_coo *coo)
+struct matrix *jacobi_create(int bits, int n, int nz, struct matrix_coo *coo)
 {
-    FLOAT *d = ALLOC(FLOAT, n);
+    FLOATM *d = malloc(sizeof(FLOATM) * n);
     for (int k = 0; k < n; k++) d[k] = 0.0;
     for (int k = 0; k < nz; k++)
         if (coo[k].i == coo[k].j)
-            d[coo[k].i] = coo[k].a;
+            d[coo[k].i] = TRUNCATE(FLOATM, bits, coo[k].a);
 
-    struct precond_jacobi *pre = ALLOC(struct precond_jacobi, 1);
+    struct precond_jacobi *pre = malloc(sizeof(struct precond_jacobi));
     pre->super.n = n;
     pre->super.dmult = NULL;
-    pre->super.smult = (void (*)(struct matrix *, FLOAT *, FLOAT *))jacobi_smult;
+    pre->super.smult = (void (*)(struct matrix *, FLOATM *, FLOATM *))jacobi_smult;
+    pre->bits = bits;
     pre->d = d;
     return (struct matrix *)pre;
 }
