@@ -1,0 +1,65 @@
+#
+# makefile for jacobi solver
+#
+#
+
+# 
+# precision
+#
+SINGLE=1
+
+#
+# ARCH specific flags
+#
+POWER8=1
+
+ifdef SINGLE
+   OPTS=-DSINGLE 
+endif
+
+# Problem with OMP on Davide
+ifdef POWER8
+OMP=
+else
+OMP=-fopenmp
+endif
+
+CC=nvcc
+CFLAGS=-O3 -g $(OMP)
+OCMPFLAGS=-D__cplusplus__
+
+LDFLAGS= -lm -lrt $(OMP)
+
+#
+##  Get microbenchmark directory
+#
+
+BMDIR = $(dir $(firstword $(MAKEFILE_LIST)))
+COMMON_DIR=$(BMDIR)/../common
+
+#
+## SRC directory
+JACOBI_SRC=jacobi.cu
+JACOBI_OBJ=jacobi.o
+COMMON_OBJ=oprecomp.o
+
+SRC=$(addprefix $(BMDIR),$(JACOBI_SRC))
+OBJ=$(JACOBI_OBJ) $(COMMON_OBJ)
+
+# INCLUDEs
+INCS=$(COMMON_DIR)
+
+build:jacobi_cuda
+
+jacobi_cuda: $(OBJ) 
+	$(CC) -o $@ $(OBJ) $(LDFLAGS) 
+
+$(COMMON_OBJ):$(COMMON_DIR)/oprecomp.c
+	$(CC) $(CFLAGS) -c $<
+
+%.o:$(BMDIR)/%.cu
+	$(CC) $(CFLAGS) $(OCMPFLAGS) $(OPTS) -I$(INCS) -c  $<
+
+
+clean:
+	rm *.o jacobi_cuda

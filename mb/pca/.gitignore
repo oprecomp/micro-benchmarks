@@ -1,0 +1,4 @@
+*.o
+*.P
+libgomp.spec
+test_pca

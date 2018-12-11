@@ -1,0 +1,10 @@
+cat
+dog
+elephant
+fish
+hello
+horse
+mouse
+precision
+trunk
+world

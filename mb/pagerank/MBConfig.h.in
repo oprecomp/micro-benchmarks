@@ -1,0 +1,3 @@
+// CMake fills the defines with the information from the root-CMakeLists.txt file.
+#define MB_VERSION_MAJOR @MB_VERSION_MAJOR@
+#define MB_VERSION_MINOR @MB_VERSION_MINOR@

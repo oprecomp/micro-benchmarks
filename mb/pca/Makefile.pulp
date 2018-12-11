@@ -1,0 +1,14 @@
+PULP_OMP_APP = main
+PULP_APP_OMP_SRCS = main.c pca_.c libSVM_load_model.c libSVM_predict.c wavelet_.c pca_mrrr.c \
+    sstemr.c slarrc.c slae2.c slaev2.c slanst.c slarrr.c slarre.c slarrv.c slarrj.c slasrt.c slassq.c slarra.c slarrd.c slarrk.c slarnv.c slarrb.c slasq2.c slaset.c slarrf.c slar1v.c slaruv.c slaneg.c slasq3.c slasq4.c slasq5.c slasq6.c slaebz.c \
+    ssytd2.c slarfg.c slapy2.c \
+    sorm2l.c slarf.c ilaslc.c ilaslr.c \
+    sdot.c saxpy.c snrm2.c sscal.c scopy.c sswap.c sger.c ssymv.c sgemv.c ssyr2.c
+
+PULP_CFLAGS = -O3 -g3 
+PULP_LDFLAGS = -lm 
+l2Size=2000000 
+l1Size=600000 
+stackSize = 12500
+include $(PULP_SDK_HOME)/install/rules/pulp.mk
+

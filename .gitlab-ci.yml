@@ -1,0 +1,21 @@
+# Copyright (c) 2017 OPRECOMP Project
+# Fabian Schuiki <fschuiki@iis.ee.ethz.ch>
+#
+# GitLab Continuous Integration configuration for OPRECOMP
+# This file currently compiles the microbenchmarks and executes the
+# corresponding unit tests.
+
+before_script:
+  - ci/build_gtest.sh
+  - ci/build_tinydnn.sh
+
+benchmarks:
+  script:
+    - export CC=gcc-4.9.1
+    - export CXX=g++-4.9.1
+    - export LIBRARY_PATH=$HOME/.tmp/oprecomp/lib:/usr/pack/gcc-4.9.1-af/x86_64-rhe6-linux/lib64
+    - export LD_LIBRARY_PATH=$HOME/.tmp/oprecomp/lib:/usr/pack/gcc-4.9.1-af/x86_64-rhe6-linux/lib64
+    - export C_INCLUDE_PATH=$HOME/.tmp/oprecomp/include:/usr/pack/gcc-4.9.1-af/include
+    - export CPLUS_INCLUDE_PATH=$HOME/.tmp/oprecomp/include:/usr/pack/gcc-4.9.1-af/include
+    - mb/benchmarks.sh clean
+    - mb/benchmarks.sh --all
