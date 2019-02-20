@@ -3,7 +3,7 @@
 
 CFLAGS ?= -O3 -g -Wall -Wextra -std=c99
 CFLAGS += -I$(PULP_SDK_HOME)/install/ws/include
-LDFLAGS ?= -L$(PULP_SDK_HOME)/install/ws/lib -loprecomp -lcxl -lgvlauncher -lpthread
+LDFLAGS ?= -L$(PULP_SDK_HOME)/install/ws/lib -loprecomp -lcxl -lpulpvplauncher -lpthread
 
 all:: build/conv
 
