@@ -6,4 +6,4 @@ all:
 	$(MAKE) -C host
 
 run: all
-	host/build/conv pulp/build/system.oprecompkw/conv/conv
+	host/build/conv pulp/build/oprecompkw/conv/conv
