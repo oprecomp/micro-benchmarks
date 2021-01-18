@@ -1,5 +1,5 @@
 /* 
-   PageRank - Pull Style 
+   PageRank - Pull Style  
    Customized Half-Precision Floating-Point Format (6 exponent bits + 10 mantissa bits) used for data storage 
    IEEE Single-Preicsion Floating-Point Format used for computations
 */
