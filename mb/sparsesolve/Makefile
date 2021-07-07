@@ -11,7 +11,7 @@ LDFLAGS = -lm -lrt
 
 build: sparsesolve
 
-sparsesolve: sparsesolve.o mmio.o matrix.o cg.o ir.o oprecomp.o
+sparsesolve: sparsesolve.o mmio.o matrix.o oprecomp.o
 	$(CC) $^ $(LDFLAGS) -o $@
 
 clean:
@@ -21,9 +21,20 @@ tags: *.c *.h
 	ctags *.c *.h
 
 test: sparsesolve
-	./sparsesolve data/prepared/mb/sparsesolve/bcsstk01.mtx 1 1e-7 10000 1e-7 100
+	./sparsesolve data/prepared/mb/sparsesolve/bcsstk01.mtx 1 1e-7 10000 1e-7 52
 
-%.o: %.c cg.h vector.h matrix.h
+plots: bcsstk01.pdf gr_30_30.pdf msc10848.pdf
+
+%.pdf: %.eps
+	epstopdf $<
+
+%.eps: sparsesolve.plt %.dat
+	gnuplot -c $^ $* > $@
+
+%.dat: sparsesolve
+	for i in `seq 1 52`; do ./sparsesolve ../data/prepared/mb/sparsesolve/$*.mtx 10000 1e-7 8 $$i ; done | grep -v '#' > $@
+
+%.o: %.c floatm.h vector.h matrix.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
 oprecomp.o: $(VPATH)../common/oprecomp.c

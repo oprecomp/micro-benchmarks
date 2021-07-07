@@ -5,7 +5,7 @@ CFLAGS ?= -O3 -g -Wall -Wextra -std=c99
 CPPFLAGS ?= -O3 -g -Wall -Wextra -std=c++11 -fopenmp
 CFLAGS += -I$(PULP_SDK_HOME)/install/ws/include
 CPPFLAGS += -I$(PULP_SDK_HOME)/install/ws/include -I./include
-LDFLAGS ?= -L$(PULP_SDK_HOME)/install/ws/lib -loprecomp -lcxl -lgvlauncher -lpthread
+LDFLAGS ?= -L$(PULP_SDK_HOME)/install/ws/lib -loprecomp -lcxl -lpulpvplauncher -lpthread
 
 all: clean build/neuron build/blstm
 

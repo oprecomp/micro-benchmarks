@@ -26,7 +26,7 @@ inline uint64_t host2local(uint64_t host) {
 
 
 // Rudimentary putc/puts for output.
-#define boot_putc_address (STDOUT_BASE_ADDR + STDOUT_PUTC_OFFSET + (hal_core_id()<<3) + (hal_cluster_id()<<7))
+#define boot_putc_address (ARCHI_STDOUT_ADDR + STDOUT_PUTC_OFFSET + (hal_core_id()<<3) + (hal_cluster_id()<<7))
 
 static void boot_putc(unsigned enable, unsigned int c) {
 	if (enable) {

@@ -6,4 +6,4 @@ all:
 	$(MAKE) -C host
 
 run: all
-	host/build/blstm pulp/build/system.oprecompkw/blstm/blstm
+	host/build/blstm pulp/build/oprecompkw/blstm/blstm
